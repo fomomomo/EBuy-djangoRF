@@ -1,0 +1,90 @@
+{% extends 'store/main.html' %}
+{% load static %}
+{% block content %}
+	<div id="product-name" class="row">
+
+	</div>
+	
+
+	<script type="text/javascript">
+		
+		buildHome();
+		
+		function buildHome(){
+			row = document.getElementById('product-name');
+			row.innerHTML = ''
+			var url = "http://127.0.0.1:8000/api/products/"
+			
+			fetch(url)
+			.then((resp) => resp.json())
+			.then(function(data){
+				
+				list = data
+
+				for(var i in list){
+					var item= `
+					<div class="col-lg-4">
+						<img class="thumbnail" src="${list[i].imageURL}">
+						<div class="box-element product">
+							<h6><strong>${list[i].name} </strong></h6>
+							<hr>
+
+							<button id="update-cart-${list[i].id}" data-product="${list[i].id}" data-action="add" class="btn btn-outline-secondary add-btn">Add to Cart</button>
+							<a class="btn btn-outline-success" href="#">View</a>
+							<h4 style="float: right"><strong>₹${list[i].price}</strong></h4>
+
+						</div>
+					</div>
+					`
+					row.innerHTML += item;
+				}
+
+				for (var i in list) {
+					var updateBtn = document.getElementById(`update-cart-${list[i].id}`)
+					updateBtn.addEventListener('click', function(){
+						var productId = this.dataset.product
+						var action = this.dataset.action
+						console.log('productId:', productId, 'Action:', action)
+						console.log('USER:', user)
+
+						if (user == 'AnonymousUser'){
+							addCookieItem(productId, action);
+							
+						}else{
+							updateUserOrder(productId, action)
+						}
+					})
+				}
+
+			})
+
+			
+			
+		}
+
+		function updateUserOrder(productId, action) {
+			var url = `http://127.0.0.1:8000/api/cart-update-item/${action}/${productId}`
+			
+			fetch(url)
+			.then((resp)=>resp.json())
+			.then((data) =>{
+			
+				buildHome();
+				updateCartTotal();
+			})
+		
+		}
+	
+		
+		
+
+
+		
+
+
+		
+				
+
+	</script>
+
+{% endblock content %}

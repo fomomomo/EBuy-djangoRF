@@ -1,0 +1,154 @@
+{% extends 'store/main.html' %}
+{% load static %}
+{% block content %}
+	<div class="row">
+		<div class="col-lg-12">
+			<div class="box-element">
+
+				<a  class="btn btn-outline-dark" href="{% url 'store' %}">&#x2190; Continue Shopping</a>
+
+				<br>
+				<br>
+				<table class="table">
+					<tr>
+						<th><h5>Items: <strong id="cart-total-item">0</strong></h5></th>
+						<th><h5>Total:<strong id="cart-total-amt"> 0</strong></h5></th>
+						<th>
+							<a  style="float:right; margin:5px;" class="btn btn-success" href="{% url 'checkout' %}">Checkout</a>
+						</th>
+					</tr>
+				</table>
+
+			</div>
+
+			<br>
+			<div id="display-item"	class="box-element">
+				<div class="cart-row">
+					<div style="flex:2"></div>
+					<div style="flex:2"><strong>Item</strong></div>
+					<div style="flex:1"><strong>Price</strong></div>
+					<div style="flex:1"><strong>Quantity</strong></div>
+					<div style="flex:1"><strong>Total</strong></div>
+				</div>
+				
+					
+				
+		
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+
+
+		buildList();
+		function buildList(){
+			cartTotalItem = document.getElementById('cart-total-item')
+			cartTotalAmt = document.getElementById('cart-total-amt')
+
+			url = "http://127.0.0.1:8000/api/order-details/"
+			fetch(url)
+			.then((resp) => resp.json())
+			.then(data => {
+				console.log(data);
+				cartTotalItem.innerHTML = data.get_cart_items
+				cartTotalAmt.innerHTML = `₹ ${data.get_cart_total.toFixed(2)}`
+			})
+
+			displayItem = document.getElementById('display-item')
+			url = "http://127.0.0.1:8000/api/cart-item-list/"
+			displayItem.innerHTML = `
+					<div class="cart-row">
+					<div style="flex:2"></div>
+					<div style="flex:2"><strong>Item</strong></div>
+					<div style="flex:1"><strong>Price</strong></div>
+					<div style="flex:1"><strong>Quantity</strong></div>
+					<div style="flex:1"><strong>Total</strong></div>
+					</div>
+			`
+
+			fetch(url)
+			.then((resp) => resp.json())
+			.then(function(data){
+
+				list = data
+
+				for(var i in list){
+	
+					item = `
+					<div class="cart-row">
+						<div style="flex:2"><img class="row-image" src="${list[i].imageURL}"></div>
+						<div style="flex:2"><p>${list[i].product_name}</p></div>
+						<div style="flex:1"><p>${list[i].product_price.toFixed(2)}</p></div>
+						<div style="flex:1">
+							<p class="quantity">${list[i].quantity}</p>
+							<div class="quantity">
+								<img id="add-update-cart-${list[i].product_id}" data-product="${list[i].product_id}" data-action="add" class="chg-quantity" src="{% static  'images/arrow-up.png' %}">
+				
+								<img id="remove-update-cart-${list[i].product_id}" data-product="${list[i].product_id}" data-action="remove" class="chg-quantity" src="{% static  'images/arrow-down.png' %}">
+							</div>
+						</div>
+						<div style="flex:1"><p>${(list[i].product_price*list[i].quantity).toFixed(2)}</p></div>
+					</div>
+
+					`
+					displayItem.innerHTML += item
+				}
+
+				for(var i in list){
+					var updateBtnAdd = document.getElementById(`add-update-cart-${list[i].product_id}`)
+					var updateBtnRemove = document.getElementById(`remove-update-cart-${list[i].product_id}`)
+		
+					updateBtnAdd.addEventListener('click', function(){
+						var productId = this.dataset.product
+						var action = this.dataset.action
+						console.log('productId:', productId, 'Action:', action)
+						console.log('USER:', user)
+
+						if (user == 'AnonymousUser'){
+							addCookieItem(productId, action);
+							
+						}else{
+							updateUserOrder(productId, action)
+						}
+					})
+
+					updateBtnRemove.addEventListener('click', function(){
+						var productId = this.dataset.product
+						var action = this.dataset.action
+						console.log('productId:', productId, 'Action:', action)
+						console.log('USER:', user)
+
+						if (user == 'AnonymousUser'){
+							addCookieItem(productId, action);
+							
+						}else{
+							updateUserOrder(productId, action)
+						}
+					})
+
+
+
+				}
+		
+
+			})
+
+		}	
+
+		function updateUserOrder(productId, action) {
+			console.log(productId);
+			var url = `http://127.0.0.1:8000/api/cart-update-item/${action}/${productId}`
+			
+			fetch(url)
+			.then((resp)=>resp.json())
+			.then((data) =>{
+				buildList();
+				updateCartTotal();
+	
+			})
+		
+		}
+
+	</script>
+{% endblock content %}
